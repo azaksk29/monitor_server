@@ -8,12 +8,16 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
 public class MonitorDeviceServer {
     private static final int PORT = 8090;
+
+    @Autowired
+    private final PortStateServerHandler portHandler = new PortStateServerHandler();
 
     public void start() {
         final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
@@ -30,13 +34,12 @@ public class MonitorDeviceServer {
                             final ChannelPipeline p = ch.pipeline();
                             p.addLast(new IntegerHeaderFrameDecoder());
                             p.addLast(new CaptureServerHandler());
-                            p.addLast(new PortStateServerHandler());
+                            p.addLast(portHandler);
                         }
                     });
 
 
             final ChannelFuture future = b.bind(PORT).sync();
-
 
             future.channel().closeFuture().sync();
         }catch(final Exception e){

@@ -27,7 +27,7 @@ public class CaptureServerHandler extends ChannelInboundHandlerAdapter {
         }
 
         String readMessage = captureBuf.toString(Charset.defaultCharset());
-        log.info("Received data .... { from Capture }", readMessage);
+        log.info("Received data .... from Capture {}", readMessage);
     }
 
     @Override
