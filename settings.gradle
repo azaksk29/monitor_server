@@ -1,0 +1,5 @@
+rootProject.name = 'monitor'
+
+include 'monitor-device-server'
+include 'monitor-admin-api'
+include 'monitor-common'
