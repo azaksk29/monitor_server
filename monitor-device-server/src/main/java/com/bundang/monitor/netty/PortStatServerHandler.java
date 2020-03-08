@@ -3,6 +3,7 @@ package com.bundang.monitor.netty;
 import com.bundang.monitor.application.PortService;
 import com.bundang.monitor.domain.Port;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import lombok.extern.slf4j.Slf4j;
@@ -13,10 +14,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.Charset;
+import java.util.List;
 
 @Slf4j
+@ChannelHandler.Sharable
 @Component
-public class PortStateServerHandler extends ChannelInboundHandlerAdapter {
+public class PortStatServerHandler extends ChannelInboundHandlerAdapter {
 
     @Autowired
     private PortService portService;
@@ -39,36 +42,36 @@ public class PortStateServerHandler extends ChannelInboundHandlerAdapter {
         }
 
         String readMessage = byteBuf.toString(Charset.defaultCharset());
+        byteBuf.release();
 
         JSONParser jsonParser = new JSONParser();
         JSONObject jsonObj = (JSONObject) jsonParser.parse(readMessage);
         JSONArray portArray = (JSONArray) jsonObj.get("ports");
 
         for (int i = 0; i < portArray.size(); i++) {
-            System.out.println("======== port : " + i + " ========");
             JSONObject portObject = (JSONObject) portArray.get(i);
-            System.out.println(portObject.get("number"));
-            System.out.println(portObject.get("state"));
-
             Integer number = new Integer(String.valueOf(portObject.get("number")));
             String state = portObject.get("state").toString();
 
-            Port port = portService.getPort(number);
-            if(port != null) {
-                if(port.getState() ==  state)
+            List<Port> pl = portService.getPorts(number);
+            // NOT empty and same state
+            if(pl.size() > 0) {
+                /* TODO : for the moment, Assume last index is lastest code */
+                Port p = pl.get(pl.size() - 1);
+                if (p.getState().equals(state))
                     continue;
-                portService.updatePort(port.getId(), port.getNumber(), state);
-            } else {
-                portService.addPort(
-                        Port.builder()
-                                .number(number)
-                                .state(state)
-                                .build()
-                );
             }
+
+            portService.addPort(
+                    Port.builder()
+                            .number(number)
+                            .state(state)
+                            //.date(date)
+                            .build()
+            );
         }
 
-        //log.info("Received data .... {}", readMessage);
+        log.info("Received port stat data .... {}", readMessage);
     }
 
     @Override

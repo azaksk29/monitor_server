@@ -9,15 +9,30 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 @Slf4j
 @Component
 public class MonitorDeviceServer {
-    private static final int PORT = 8090;
 
     @Autowired
-    private final PortStateServerHandler portHandler = new PortStateServerHandler();
+    private PortStatServerHandler portStatServerHandler;
+
+    @Value("${server.default-port}")
+    private int defaultPort;
+
+    @Value("${server.base-port}")
+    private int basePort;
+
+    @Value("${server.numofport}")
+    private int numberOfPort;
+
+    @Value("${sequential_multi_port}")
+    private boolean isSequentialMultiPort;
 
     public void start() {
         final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
@@ -30,20 +45,34 @@ public class MonitorDeviceServer {
                     .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
-                        protected void initChannel(final SocketChannel ch) throws Exception {
+                        protected void initChannel(final SocketChannel ch) {
                             final ChannelPipeline p = ch.pipeline();
                             p.addLast(new IntegerHeaderFrameDecoder());
                             p.addLast(new CaptureServerHandler());
-                            p.addLast(portHandler);
+                            p.addLast(portStatServerHandler);
                         }
                     });
 
+            ArrayList<Integer> ports = new ArrayList<>();
+            if(isSequentialMultiPort) {
+                for (int p = basePort; p < basePort + numberOfPort; p++)
+                    ports.add(p);
+            } else {
+                ports.add(defaultPort);
+            }
 
-            final ChannelFuture future = b.bind(PORT).sync();
+            Collection<Channel> channels = new ArrayList<>(ports.size());
 
-            future.channel().closeFuture().sync();
+            for(int p : ports) {
+                Channel serverChannel = b.bind(p).sync().channel();
+                channels.add(serverChannel);
+            }
+
+            for(Channel ch : channels)
+                ch.closeFuture().sync();
+
         }catch(final Exception e){
-            log.info("Shutting down ~~~");
+            log.info("Shutting down ...");
             e.printStackTrace();
         }
         finally{

@@ -9,7 +9,7 @@ import java.util.List;
 public class IntegerHeaderFrameDecoder extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx,
-                          ByteBuf buf, List<Object> out) throws Exception {
+                          ByteBuf buf, List<Object> out) {
 
         if (buf.readableBytes() < 5) {
             return;

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @CrossOrigin
@@ -25,54 +26,54 @@ public class PortController {
         return ports;
     }
 
-//    @GetMapping("/ports")
-//    public List<Port> list(@RequestParam("number") Integer number ) {
-//        List<Port> ports =
-//                portService.getPorts(number);
-//        return ports;
-//    }
-
-
-    @GetMapping("/ports/{id}")
+    @GetMapping("/port/{id}")
     public Port detail(@PathVariable("id") Long id) {
         Port port = portService.getPort(id);
         return port;
     }
 
-    @PostMapping("/ports")
+    @GetMapping("/ports/{number}")
+    public List<Port> detail(@PathVariable("number") Integer number) {
+        List<Port> portList = portService.getPorts(number);
+        return portList;
+    }
+
+    @PostMapping("/port")
     public ResponseEntity<?> create(@Valid @RequestBody Port resource)
             throws URISyntaxException {
         Port port = portService.addPort(
                 Port.builder()
                         .number(resource.getNumber())
                         .state(resource.getState())
+                        .date(resource.getDate())
                         .build()
         );
 
-        URI location = new URI("/posts/" + port.getId());
+        URI location = new URI("/port/" + port.getId());
         return ResponseEntity.created(location).body("{}");
     }
 
-    @PatchMapping("/posts")
+    @PatchMapping("/ports")
     public String bulkCreate(@RequestBody List<Port> Ports) {
         portService.bulkCreate(Ports);
 
         return "";
     }
 
-    @PatchMapping("/posts/{id}")
+    @PatchMapping("/port/{id}")
     public String update(@PathVariable("id") Long id,
                          @Valid @RequestBody Port resource) {
 
         Integer number = resource.getNumber();
         String state = resource.getState();
+        LocalDateTime date = resource.getDate();
 
-        portService.updatePort(id, number, state);
+        portService.updatePort(id, number, state, date);
 
         return "{}";
     }
 
-    @DeleteMapping
+    @DeleteMapping("/port/{id}")
     public String delete(@PathVariable("id") Long id) {
         portService.deactivePort(id);
 

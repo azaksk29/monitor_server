@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -44,14 +45,6 @@ public class PortService {
         return port;
     }
 
-    public Port getPort(Integer number) {
-        Port port = portRepository.findByNumber(number).orElse(null);
-                //.orElseThrow(() -> new PortNotFoundException(number));
-
-        return port;
-    }
-
-
     public Port addPort(Port port) {
         return portRepository.save(port);
     }
@@ -63,12 +56,13 @@ public class PortService {
     }
 
     public Port updatePort(Long id, Integer number,
-                           String state) {
+                           String state, LocalDateTime date) {
         Port port = portRepository.findById(id)
                 .orElseThrow(() -> new PortNotFoundException(id));
 
         port.setNumber(number);
         port.setState(state);
+        port.setDate(date);
 
         return port;
     }
@@ -81,8 +75,4 @@ public class PortService {
 
         return port;
     }
-
-
-
-
 }

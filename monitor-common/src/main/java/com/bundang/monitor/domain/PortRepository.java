@@ -14,7 +14,7 @@ public interface PortRepository extends CrudRepository<Port, Long> {
 
     Optional<Port> findById(Long id);
 
-    Optional<Port> findByNumber(Integer number);
+    //Optional<Port> findByNumber(Integer number);
 
     Port save(Port port);
 }
